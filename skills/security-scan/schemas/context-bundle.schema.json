@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "context-bundle.schema.json",
+  "type": "object",
+  "required": ["finding_id", "sink", "callers", "entry_points_reached", "unresolved_edges"],
+  "properties": {
+    "finding_id": { "type": "string" },
+    "sink": {
+      "type": "object",
+      "required": ["file", "method_signature", "lines", "code"],
+      "properties": {
+        "file": { "type": "string" },
+        "method_signature": { "type": "string" },
+        "lines": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "code": { "type": "string" }
+      }
+    },
+    "callers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["depth", "method_signature", "file", "lines", "code", "call_site_line"],
+        "properties": {
+          "depth": { "type": "integer", "minimum": 1 },
+          "method_signature": { "type": "string" },
+          "file": { "type": "string" },
+          "lines": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+          "code": { "type": "string" },
+          "call_site_line": { "type": "integer" }
+        }
+      }
+    },
+    "entry_points_reached": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "file", "method_signature", "call_chain"],
+        "properties": {
+          "type": { "type": "string", "enum": ["http-public", "http-authn", "http-internal", "kafka", "jms", "scheduled", "cli", "grpc", "library-boundary"] },
+          "file": { "type": "string" },
+          "method_signature": { "type": "string" },
+          "path": { "type": "string" },
+          "http_method": { "type": "string" },
+          "auth_required": { "type": "boolean" },
+          "request_binding": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" },
+                "source": { "type": "string" },
+                "validators": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "call_chain": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "unresolved_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "reason"],
+        "properties": {
+          "at": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "taint_from_tool": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "concurrency_signals": {
+      "type": "object",
+      "properties": {
+        "annotations": { "type": "array", "items": { "type": "string" } },
+        "executors_used": { "type": "array", "items": { "type": "string" } },
+        "container_concurrency": { "type": "string" }
+      }
+    }
+  }
+}

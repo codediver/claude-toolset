@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finding.schema.json",
+  "type": "object",
+  "required": ["id", "tool", "rule_id", "cwe", "severity_raw", "file", "line_start", "line_end", "message", "fingerprint"],
+  "properties": {
+    "id": { "type": "string" },
+    "tool": { "type": "string", "enum": ["semgrep", "codeql", "spotbugs", "dependency-check", "gitleaks"] },
+    "rule_id": { "type": "string" },
+    "cwe": { "type": "array", "items": { "type": "string", "pattern": "^CWE-\\d+$" } },
+    "severity_raw": { "type": "string", "enum": ["critical", "high", "medium", "low", "info"] },
+    "file": { "type": "string" },
+    "line_start": { "type": "integer", "minimum": 1 },
+    "line_end": { "type": "integer", "minimum": 1 },
+    "code_snippet": { "type": "string" },
+    "message": { "type": "string" },
+    "data_flow": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "line", "kind"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "kind": { "type": "string", "enum": ["source", "step", "sanitizer", "sink"] },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "duplicates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": { "tool": { "type": "string" }, "rule_id": { "type": "string" } }
+      }
+    },
+    "fingerprint": { "type": "string" }
+  }
+}

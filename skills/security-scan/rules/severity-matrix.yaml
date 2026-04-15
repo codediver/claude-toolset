@@ -1,0 +1,91 @@
+# CWE -> base severity mapping. Tool-reported severity is informational only;
+# this matrix is authoritative for triage. Update as new CWEs are encountered.
+
+# Severity levels: critical, high, medium, low, info
+# Exploit impact levels used in triage: rce, auth-bypass, data-disclosure, privilege-escalation, dos, info-leak, tampering
+
+cwes:
+  # Injection
+  CWE-89:   { severity: critical, impact: [data-disclosure, rce], name: "SQL Injection" }
+  CWE-77:   { severity: critical, impact: [rce],                   name: "Command Injection" }
+  CWE-78:   { severity: critical, impact: [rce],                   name: "OS Command Injection" }
+  CWE-94:   { severity: critical, impact: [rce],                   name: "Code Injection" }
+  CWE-79:   { severity: high,     impact: [auth-bypass, tampering], name: "Cross-Site Scripting (XSS)" }
+  CWE-917:  { severity: critical, impact: [rce],                   name: "Expression Language Injection" }
+  CWE-90:   { severity: high,     impact: [auth-bypass, data-disclosure], name: "LDAP Injection" }
+  CWE-643:  { severity: high,     impact: [auth-bypass, data-disclosure], name: "XPath Injection" }
+  CWE-611:  { severity: high,     impact: [data-disclosure, dos], name: "XXE" }
+
+  # Deserialization / crypto
+  CWE-502:  { severity: critical, impact: [rce],                  name: "Unsafe Deserialization" }
+  CWE-327:  { severity: high,     impact: [data-disclosure],      name: "Broken/Weak Crypto" }
+  CWE-330:  { severity: high,     impact: [auth-bypass],          name: "Insufficient Randomness" }
+  CWE-798:  { severity: critical, impact: [auth-bypass],          name: "Hardcoded Credentials" }
+  CWE-321:  { severity: high,     impact: [auth-bypass],          name: "Hardcoded Cryptographic Key" }
+  CWE-326:  { severity: high,     impact: [data-disclosure],      name: "Inadequate Encryption Strength" }
+
+  # SSRF / redirect
+  CWE-918:  { severity: high,     impact: [data-disclosure, rce], name: "SSRF" }
+  CWE-601:  { severity: medium,   impact: [phishing],             name: "Open Redirect" }
+
+  # Path / access
+  CWE-22:   { severity: high,     impact: [data-disclosure],      name: "Path Traversal" }
+  CWE-23:   { severity: high,     impact: [data-disclosure],      name: "Relative Path Traversal" }
+  CWE-73:   { severity: high,     impact: [data-disclosure, tampering], name: "External Control of File Name" }
+
+  # Authn / authz
+  CWE-287:  { severity: high,     impact: [auth-bypass],          name: "Improper Authentication" }
+  CWE-862:  { severity: high,     impact: [privilege-escalation], name: "Missing Authorization" }
+  CWE-863:  { severity: high,     impact: [privilege-escalation], name: "Incorrect Authorization" }
+  CWE-352:  { severity: medium,   impact: [tampering],            name: "CSRF" }
+  CWE-384:  { severity: medium,   impact: [auth-bypass],          name: "Session Fixation" }
+
+  # Concurrency
+  CWE-362:  { severity: medium,   impact: [tampering, dos],       name: "Race Condition (TOCTOU family)" }
+  CWE-367:  { severity: medium,   impact: [tampering],            name: "TOCTOU File Access" }
+  CWE-366:  { severity: low,      impact: [tampering],            name: "Race on Shared Resource" }
+
+  # Info disclosure
+  CWE-200:  { severity: medium,   impact: [info-leak],            name: "Exposure of Sensitive Info" }
+  CWE-209:  { severity: low,      impact: [info-leak],            name: "Error Message Info Exposure" }
+  CWE-532:  { severity: medium,   impact: [info-leak],            name: "Insertion of Sensitive Info into Log" }
+
+  # DoS
+  CWE-400:  { severity: medium,   impact: [dos],                  name: "Uncontrolled Resource Consumption" }
+  CWE-1333: { severity: medium,   impact: [dos],                  name: "Inefficient Regex (ReDoS)" }
+
+  # Misc
+  CWE-20:   { severity: medium,   impact: [tampering],            name: "Improper Input Validation" }
+  CWE-295:  { severity: high,     impact: [mitm],                 name: "Improper Certificate Validation" }
+  CWE-319:  { severity: high,     impact: [mitm, data-disclosure], name: "Cleartext Transmission" }
+  CWE-601:  { severity: medium,   impact: [phishing],             name: "Open Redirect" }
+
+# Default for unmapped CWEs — err conservative
+default:
+  severity: medium
+  impact: [tampering]
+  name: "Unmapped CWE"
+
+# Triage category rules (echoed in workflows/06)
+triage:
+  must_fix:
+    require_all:
+      - classification: "reachable-exploitable"
+      - adversarial_agrees: true    # if adversarial pass ran
+    require_any:
+      - entry_point_type_in: ["http-public", "grpc"]
+        and_auth_required: false
+      - impact_includes_any: ["rce", "auth-bypass", "data-disclosure"]
+      - severity_in: ["critical", "high"]
+  should_fix:
+    require_any:
+      - classification: "reachable-conditional"
+      - validator_and_adversarial_disagree: true
+      - classification: "insufficient-context"
+        and_severity_in: ["critical", "high"]
+      - classification: "reachable-exploitable"
+        and_entry_point_type_in: ["http-internal", "kafka", "jms", "scheduled"]
+      - severity: "medium"
+        and_classification: "reachable-exploitable"
+  info:
+    default: true
