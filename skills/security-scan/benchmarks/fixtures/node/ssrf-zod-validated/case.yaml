@@ -1,0 +1,26 @@
+name: ssrf-zod-validated
+language: node
+cwe: [CWE-918]
+vulnerability: "URL from req.body, but parsed through Zod schema with .url() and host allow-list via .refine()"
+
+expected:
+  category: info
+  classification: unreachable
+  entry_point_type: http-public
+
+rationale: >
+  Same vulnerability class as ssrf-reachable-express, but with Zod validation.
+  The schema uses .url() + .refine(u => ALLOWED_HOSTS.includes(new URL(u).host))
+  before the URL reaches axios.get. The validator must recognize Zod .parse() as
+  a sanitizer and quote the refine() predicate as evidence of unreachability.
+
+  If the skill classifies this as must_fix, the Node adapter's understanding of
+  Zod validation is broken.
+
+must_mention_in_evidence:
+  - "z.object"
+  - "refine"
+  - "ALLOWED_HOSTS"
+
+must_not_mention:
+  - "reachable-exploitable"

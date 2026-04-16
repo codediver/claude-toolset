@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "service-graph.schema.json",
+  "description": "Cross-service graph built during Phase 5. Nodes = services; edges = HTTP calls + async message flows.",
+  "type": "object",
+  "required": ["services", "edges"],
+  "properties": {
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "language"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable service identifier (e.g., application name or user-supplied id)" },
+          "path": { "type": "string", "description": "Absolute path to the service's repo root" },
+          "language": { "type": "string", "enum": ["java", "node", "python"] },
+          "public_entry_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "file", "method_signature"],
+              "properties": {
+                "type": { "type": "string", "enum": ["http-public", "http-authn", "http-internal", "kafka", "jms", "sqs", "grpc", "grpc-internal", "scheduled", "cli"] },
+                "file": { "type": "string" },
+                "method_signature": { "type": "string" },
+                "path": { "type": "string" },
+                "http_method": { "type": "string" },
+                "auth_required": { "type": "boolean" },
+                "topics": { "type": "array", "items": { "type": "string" } },
+                "schema_ref": { "type": "string" }
+              }
+            }
+          },
+          "openapi_spec": { "type": "string", "description": "Relative path to openapi.yaml if present" },
+          "hostname_hints": { "type": "array", "items": { "type": "string" }, "description": "Hostnames this service answers on (e.g. from k8s Service, Docker Compose, Helm values)" },
+          "application_name": { "type": "string", "description": "e.g., Spring spring.application.name" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "kind"],
+        "properties": {
+          "from": { "type": "string", "description": "Service id" },
+          "to": { "type": "string", "description": "Service id, or 'external-third-party', 'external-unmapped', 'external-dynamic'" },
+          "kind": { "type": "string", "enum": ["http", "kafka", "jms", "sqs", "grpc", "rabbitmq"] },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "file": { "type": "string" },
+              "line": { "type": "integer" },
+              "quote": { "type": "string" }
+            }
+          },
+          "http": {
+            "type": "object",
+            "properties": {
+              "url_pattern": { "type": "string" },
+              "method": { "type": "string" },
+              "matched_by": { "type": "string", "enum": ["openapi", "feign-client-name", "hostname-literal", "env-var-resolved", "dynamic"] }
+            }
+          },
+          "async": {
+            "type": "object",
+            "properties": {
+              "topic": { "type": "string" },
+              "schema_ref": { "type": "string" },
+              "schema_registry_subject": { "type": "string" }
+            }
+          },
+          "auth_hint": { "type": "string", "enum": ["jwt-bearer", "basic-auth", "mtls", "service-account", "none", "unknown"] }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "max_hops": { "type": "integer" },
+        "source_file": { "type": "string" }
+      }
+    }
+  }
+}

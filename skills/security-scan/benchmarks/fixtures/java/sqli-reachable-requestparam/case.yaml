@@ -1,0 +1,26 @@
+name: sqli-reachable-requestparam
+language: java
+cwe: [CWE-89]
+vulnerability: "SQL injection via unparameterized Statement.executeQuery"
+
+expected:
+  category: must_fix
+  classification: reachable-exploitable
+  entry_point_type: http-public
+  min_evidence_chain_length: 2
+
+rationale: >
+  Baseline positive case. @RequestParam String q on a @GetMapping with no Spring
+  Security flows unchanged to Statement.executeQuery with string concatenation.
+  If the skill misses this, detection is broken. If it suppresses this, FP
+  filtering is too aggressive.
+
+must_mention_in_evidence:
+  - "Api.java"
+  - "@RequestParam"
+  - "executeQuery"
+
+must_not_mention:
+  - "sanitized"
+  - "validated"
+  - "PreparedStatement"   # the vulnerable code does NOT use it

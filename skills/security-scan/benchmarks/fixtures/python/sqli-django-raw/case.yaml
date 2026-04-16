@@ -1,0 +1,24 @@
+name: sqli-django-raw
+language: python
+cwe: [CWE-89]
+vulnerability: "Django Model.objects.raw() with f-string concat of request.GET"
+
+expected:
+  category: must_fix
+  classification: reachable-exploitable
+  entry_point_type: http-public
+  min_evidence_chain_length: 2
+
+rationale: >
+  Baseline positive for Python/Django. The Django URL pattern maps to a view
+  that calls Item.objects.raw(f"SELECT * FROM items WHERE name = '{request.GET['q']}'").
+  No CSRF decorator doesn't matter here (GET); no @login_required. Must detect
+  even with only Semgrep + Bandit.
+
+must_mention_in_evidence:
+  - "request.GET"
+  - "objects.raw"
+
+must_not_mention:
+  - "sanitized"
+  - "parameterized"

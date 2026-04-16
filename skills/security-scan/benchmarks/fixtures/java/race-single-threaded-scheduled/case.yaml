@@ -1,0 +1,24 @@
+name: race-single-threaded-scheduled
+language: java
+cwe: [CWE-362, CWE-366]
+vulnerability: "'Race condition' on shared counter — but only invoked from a single-threaded @Scheduled"
+
+expected:
+  category: info
+  classification: unreachable
+  entry_point_type: scheduled
+  min_evidence_chain_length: 1   # unreachable verdict must quote the @Scheduled annotation
+
+rationale: >
+  SpotBugs/FindBugs will flag read-modify-write on a non-atomic int as a race
+  (CWE-366). The skill must suppress this: the only caller is a @Scheduled method
+  with Spring's default single-threaded TaskScheduler pool. The validator must
+  quote the @Scheduled annotation + absence of @EnableAsync / custom pool as
+  evidence of unreachability.
+
+must_mention_in_evidence:
+  - "@Scheduled"
+
+must_not_mention:
+  - "reachable-exploitable"
+  - "multi-threaded"

@@ -28,8 +28,13 @@ Any of:
 - Dead-code / test-only (already pre-suppressed, but if any slip through)
 
 ### Edge cases
-- Dependency-Check CVE findings (transitive/direct CVEs) bypass the reachability validator — they are **Must Fix** if CVSS ≥ 7 AND the dependency is on the runtime classpath, **Should Fix** otherwise. Reachability validation for library CVEs is out of MVP scope.
+- Dependency-Check / osv-scanner CVE findings (transitive/direct CVEs) bypass the reachability validator — they are **Must Fix** if CVSS ≥ 7 AND the dependency is on the runtime classpath, **Should Fix** otherwise. Reachability validation for library CVEs is out of MVP scope.
 - Gitleaks findings are always **Must Fix** if the secret is in the current tree; history-only exposures are **Should Fix** with a note to rotate.
+- **Cross-service findings (Phase 5):** apply the Phase 5 verdict in place of the Phase 4 verdict. An internal-entry finding that Phase 5 classifies `reachable-exploitable` via a public upstream endpoint is **Must Fix**; an internal-entry finding that Phase 5 classifies `unreachable` (trusted-input upstream with validation) drops to **Info**. The evidence chain in the report spans every service hop.
+- **External-boundary (Phase 5):** when the upstream trace hits a third-party or unmapped service, classify as **Should Fix** with the `external-boundary` precondition noted. Recommend the user either expand scope (if the service was just missed) or confirm the third party's input trust model.
+- **IaC misconfig findings** use a slightly different reachability model: the "entry point" is an **exposure vector** (public LB, public bucket, open security group, public RDS). Must Fix = sensitive resource + public vector + no auth gate. Should Fix = public vector but auth gate exists or sensitivity unclear. Info = internal-only exposure. Always quote the specific IaC lines that create the public exposure as the evidence chain.
+- **Container CVE findings** become Must Fix only when the image is deployed in a workload that IaC shows is publicly exposed (see cross-phase note in `detectors/container.md`). CVE alone with no deployment context → Should Fix with a note to confirm runtime. CVE in a build-stage layer not copied to the final image → Info.
+- **Cloud secret findings** (IaC references that route credentials via env vars rather than a secret manager): CWE-522. Must Fix if the env var sources from a non-secret-manager location (plain ConfigMap, hardcoded Helm value). Should Fix if sourced from a secret manager but without rotation/least-privilege evidence.
 
 ## Output
 
@@ -91,11 +96,11 @@ Matches [`schemas/triage-report.schema.json`](../schemas/triage-report.schema.js
 
 ### triage-report.md
 
-Human-readable rendering. Suggested layout:
+Human-readable rendering. In cross-service mode (Phase 5), evidence chains span services — render them with explicit service headers. Suggested layout:
 
 ```markdown
-# Security Scan Report — <project name>
-Scanned: 2026-04-15T12:00:00Z · Root: /abs/path
+# Security Scan Report — <scope name>
+Scanned: 2026-04-15T12:00:00Z · Scope: [public-api, orders-api, billing-api]
 
 ## Summary
 | Category | Count |
@@ -107,24 +112,36 @@ Scanned: 2026-04-15T12:00:00Z · Root: /abs/path
 
 ## Must Fix (3)
 
-### 1. SQL injection via @RequestParam in /api/search — CWE-89
-**Location:** `src/main/java/com/example/Repo.java:42-43` (module: app)
-**Entry point:** `GET /api/search` (no auth)
-**Detected by:** CodeQL, Semgrep (agree)
+### 1. SQL injection in orders-api/Repo.java reached from public unauthenticated endpoint in public-api — CWE-89
+**Sink:** `orders-api/src/main/java/com/example/Repo.java:42-43`
+**Ultimate entry point:** `public-api · POST /submit` (no auth)
+**Hops:** 2  ·  **Detected by:** CodeQL + Semgrep (agree)
 
-**Evidence chain:**
-1. `src/main/java/com/example/Api.java:22-25` — entry point binds user input
+**Evidence chain (cross-service):**
+
+_Service: public-api_
+1. `public-api/Controller.java:10-12` — public unauthenticated endpoint
    ```java
-   @GetMapping("/api/search") public List<Item> search(@RequestParam String q) {
+   @PostMapping("/submit") public Resp submit(@RequestBody Payload p) {
    ```
-2. `src/main/java/com/example/Repo.java:42-43` — unsanitized concat into SQL
+2. `public-api/Controller.java:14-15` — payload forwarded unchanged
    ```java
-   String sql = "SELECT * FROM items WHERE name = '" + q + "'";
+   restTemplate.postForObject("http://orders.internal/internal/order", p, Resp.class);
    ```
 
-**Justification:** Reachable from unauthenticated public endpoint. Two tools agree; validator and adversarial pass both confirm exploitability.
+_Service: orders-api_
+3. `orders-api/OrderApi.java:20-23` — internal endpoint consumes payload
+   ```java
+   @PostMapping("/internal/order") Order create(@RequestBody Payload p) { return repo.find(p.name()); }
+   ```
+4. `orders-api/Repo.java:42-43` — unsanitized SQL concat
+   ```java
+   String sql = "SELECT * FROM orders WHERE name = '" + name + "'";
+   ```
 
-**Remediation:** Use a parameterized PreparedStatement.
+**Justification:** Reachable from unauthenticated public endpoint in public-api across 2 hops. Phase 5 cross-service trace terminated at the public boundary with no validation. Two tools agree at the sink; adversarial pass concurred.
+
+**Remediation:** Parameterize the query in orders-api/Repo.java. Additionally, add request-body validation at public-api/Controller.java to narrow taint before forwarding.
 
 ---
 

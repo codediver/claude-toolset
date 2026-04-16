@@ -58,7 +58,19 @@ cwes:
   CWE-20:   { severity: medium,   impact: [tampering],            name: "Improper Input Validation" }
   CWE-295:  { severity: high,     impact: [mitm],                 name: "Improper Certificate Validation" }
   CWE-319:  { severity: high,     impact: [mitm, data-disclosure], name: "Cleartext Transmission" }
-  CWE-601:  { severity: medium,   impact: [phishing],             name: "Open Redirect" }
+
+  # IaC / Infrastructure / Cloud
+  CWE-16:   { severity: medium,   impact: [misconfiguration],     name: "Configuration" }
+  CWE-284:  { severity: high,     impact: [privilege-escalation, data-disclosure], name: "Improper Access Control (IAM wildcards, open bucket policy)" }
+  CWE-732:  { severity: high,     impact: [privilege-escalation], name: "Incorrect Permission Assignment (world-writable, chmod 777)" }
+  CWE-1188: { severity: medium,   impact: [misconfiguration],     name: "Insecure Default Initialization (unused starter-web, default admin password)" }
+  CWE-250:  { severity: high,     impact: [privilege-escalation], name: "Execution with Unnecessary Privileges (privileged container, root user)" }
+  CWE-306:  { severity: high,     impact: [auth-bypass],          name: "Missing Authentication for Critical Function (public S3, public RDS, public K8s Service)" }
+  CWE-732:  { severity: high,     impact: [privilege-escalation], name: "Permissive Cross-domain Policy / security group 0.0.0.0/0" }
+  CWE-1004: { severity: medium,   impact: [data-disclosure],      name: "Sensitive Cookie Without HttpOnly" }
+  CWE-614:  { severity: medium,   impact: [data-disclosure],      name: "Sensitive Cookie Without Secure" }
+  CWE-311:  { severity: high,     impact: [data-disclosure],      name: "Missing Encryption of Sensitive Data (S3 without SSE, RDS without encryption)" }
+  CWE-522:  { severity: high,     impact: [auth-bypass],          name: "Insufficiently Protected Credentials (secret in env, not in secret manager)" }
 
 # Default for unmapped CWEs — err conservative
 default:

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "metrics.schema.json",
+  "description": "Per-run benchmark metrics. Emitted by the harness to benchmarks/results/.",
+  "type": "object",
+  "required": ["timestamp", "skill_version", "totals", "fixtures"],
+  "properties": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "skill_version": {
+      "type": "object",
+      "required": ["git_sha", "model"],
+      "properties": {
+        "git_sha": { "type": "string" },
+        "model": { "type": "string" },
+        "tool_versions_lock": { "type": "object" }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["by_category", "by_language", "by_cwe_class"],
+      "properties": {
+        "by_category": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["precision", "recall", "tp", "fp", "fn"],
+            "properties": {
+              "precision": { "type": "number" },
+              "recall": { "type": "number" },
+              "f1": { "type": "number" },
+              "tp": { "type": "integer" },
+              "fp": { "type": "integer" },
+              "fn": { "type": "integer" }
+            }
+          }
+        },
+        "by_language": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "precision": { "type": "number" },
+              "recall": { "type": "number" },
+              "fixture_count": { "type": "integer" }
+            }
+          }
+        },
+        "by_cwe_class": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "precision": { "type": "number" },
+              "recall": { "type": "number" },
+              "fixture_count": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "properties": {
+        "p50_seconds": { "type": "number" },
+        "p95_seconds": { "type": "number" },
+        "total_wall_clock_seconds": { "type": "number" }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "properties": {
+        "bundle_hit_rate": { "type": "number" },
+        "verdict_hit_rate": { "type": "number" },
+        "codeql_db_reused": { "type": "boolean" }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "total_input_tokens": { "type": "integer" },
+        "total_output_tokens": { "type": "integer" },
+        "usd_estimate": { "type": "number" }
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "language", "expected", "actual", "pass"],
+        "properties": {
+          "name": { "type": "string" },
+          "language": { "type": "string" },
+          "cwe": { "type": "array", "items": { "type": "string" } },
+          "expected": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "classification": { "type": "string" },
+              "entry_point_type": { "type": "string" }
+            }
+          },
+          "actual": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "classification": { "type": "string" },
+              "entry_point_type": { "type": "string" },
+              "evidence_chain_length": { "type": "integer" },
+              "missing_required_mentions": { "type": "array", "items": { "type": "string" } },
+              "forbidden_mentions_hit": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "pass": { "type": "boolean" },
+          "failure_reason": { "type": "string" },
+          "latency_seconds": { "type": "number" }
+        }
+      }
+    }
+  }
+}

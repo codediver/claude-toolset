@@ -1,0 +1,25 @@
+name: ssrf-reachable-express
+language: node
+cwe: [CWE-918]
+vulnerability: "SSRF — req.query.url passed directly to axios.get with no allow-list"
+
+expected:
+  category: must_fix
+  classification: reachable-exploitable
+  entry_point_type: http-public
+  min_evidence_chain_length: 2
+
+rationale: >
+  Baseline positive for Node. Express handler binds req.query.url and passes it
+  unchanged to axios.get. No authentication middleware, no URL validation. Must
+  catch this even with only Semgrep (no CodeQL). Tests the Node detector's
+  Express entry-point enumeration and taint tracking.
+
+must_mention_in_evidence:
+  - "req.query"
+  - "axios"
+
+must_not_mention:
+  - "validated"
+  - "allow-list"
+  - "isAllowedHost"

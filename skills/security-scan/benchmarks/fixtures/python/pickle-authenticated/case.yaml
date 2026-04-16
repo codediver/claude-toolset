@@ -1,0 +1,26 @@
+name: pickle-authenticated
+language: python
+cwe: [CWE-502]
+vulnerability: "pickle.loads on user-uploaded file, behind @login_required"
+
+expected:
+  category: should_fix
+  classification: reachable-conditional
+  entry_point_type: http-authn
+
+rationale: >
+  Classic Python unsafe-deserialization, but behind Django's @login_required.
+  A must_fix classification would be wrong (requires auth); an info
+  classification would also be wrong (an authenticated user can trivially
+  exploit). The skill must land on should_fix with preconditions listing the
+  auth requirement.
+
+  Tests the validator's handling of conditional reachability and the triage
+  layer's correct segmentation.
+
+must_mention_in_evidence:
+  - "@login_required"
+  - "pickle.loads"
+
+must_not_mention:
+  - "unreachable"

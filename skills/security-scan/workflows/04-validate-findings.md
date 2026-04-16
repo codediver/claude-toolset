@@ -53,6 +53,12 @@ For each finding:
 - When `unresolved_edges_on_path` is non-empty, `confidence` MUST be ≤ `medium` — an unresolved edge means the LLM doesn't actually know if the path is complete.
 - Assumptions MUST be listed explicitly. If an assumption sounds load-bearing and questionable (e.g., "input is already validated upstream"), the classification is capped at `reachable-conditional`.
 
+## Handoff to Phase 5 (cross-service)
+
+When the user supplied a multi-repo scope AND a verdict is `reachable-*` AND the entry point type is internal (`http-internal`, `kafka`, `jms`, `sqs`, `grpc-internal`), defer final classification to [`workflows/05-cross-service-trace.md`](./05-cross-service-trace.md). Phase 5 may upgrade (finding is ultimately reachable from a public endpoint in an upstream service) or downgrade (finding is reached only from a trusted internal source) the verdict.
+
+In single-repo mode, Phase 5 is skipped and the triage layer treats internal entry points per its standard rules.
+
 ## Output
 
 Write `security-scan-report/verdicts.json`:
@@ -61,6 +67,7 @@ Write `security-scan-report/verdicts.json`:
   "verdicts": [ /* one per validated finding */ ],
   "cache_hits": 42,
   "cache_misses": 18,
-  "adversarial_disagreements": 3
+  "adversarial_disagreements": 3,
+  "deferred_to_phase5": 7
 }
 ```
